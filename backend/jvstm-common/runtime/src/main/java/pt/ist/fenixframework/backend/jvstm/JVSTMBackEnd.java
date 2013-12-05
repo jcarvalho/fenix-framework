@@ -19,6 +19,7 @@ import pt.ist.fenixframework.DomainObject;
 import pt.ist.fenixframework.DomainRoot;
 import pt.ist.fenixframework.FenixFramework;
 import pt.ist.fenixframework.backend.BackEnd;
+import pt.ist.fenixframework.backend.jvstm.longtx.LongTransactionSupport;
 import pt.ist.fenixframework.backend.jvstm.pstm.DomainClassInfo;
 import pt.ist.fenixframework.backend.jvstm.pstm.FenixFrameworkData;
 import pt.ist.fenixframework.backend.jvstm.pstm.NonPersistentTopLevelReadOnlyTransaction;
@@ -30,11 +31,14 @@ import pt.ist.fenixframework.backend.jvstm.repository.Repository;
 import pt.ist.fenixframework.core.AbstractDomainObject;
 import pt.ist.fenixframework.core.DomainObjectAllocator;
 import pt.ist.fenixframework.core.SharedIdentityMap;
+import pt.ist.fenixframework.core.TransactionError;
+import pt.ist.fenixframework.longtx.LongTransactionBackEnd;
+import pt.ist.fenixframework.longtx.TransactionalContext;
 
 /**
  *
  */
-public class JVSTMBackEnd implements BackEnd {
+public class JVSTMBackEnd implements BackEnd, LongTransactionBackEnd {
 
     private static final Logger logger = LoggerFactory.getLogger(JVSTMBackEnd.class);
     public static final String BACKEND_NAME = "jvstm";
@@ -227,6 +231,33 @@ public class JVSTMBackEnd implements BackEnd {
     @Override
     public boolean isNewInstance() {
         return newInstance;
+    }
+
+    // Support for Long Lived Transactions
+
+    @Override
+    public void commitContext(TransactionalContext context) throws TransactionError {
+        LongTransactionSupport.commitContext(context);
+    }
+
+    @Override
+    public TransactionalContext getContextForThread() {
+        return LongTransactionSupport.getContextForThread();
+    }
+
+    @Override
+    public void removeContextFromThread() {
+        LongTransactionSupport.removeContextFromThread();
+    }
+
+    @Override
+    public void rollbackContext(TransactionalContext context) {
+        LongTransactionSupport.rollbackContext(context);
+    }
+
+    @Override
+    public void setContextForThread(TransactionalContext context) {
+        LongTransactionSupport.setContextForThread(context);
     }
 
 }

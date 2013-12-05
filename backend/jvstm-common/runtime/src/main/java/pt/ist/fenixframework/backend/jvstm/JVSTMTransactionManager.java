@@ -20,11 +20,15 @@ import org.slf4j.LoggerFactory;
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.fenixframework.CallableWithoutException;
+import pt.ist.fenixframework.backend.jvstm.longtx.LongLivedTransaction;
+import pt.ist.fenixframework.backend.jvstm.longtx.LongTransactionSupport;
+import pt.ist.fenixframework.backend.jvstm.longtx.ReadOnlyLongLivedTransaction;
 import pt.ist.fenixframework.backend.jvstm.pstm.JvstmInFenixTransaction;
 import pt.ist.fenixframework.core.AbstractTransactionManager;
 import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.fenixframework.core.exception.FenixRollbackException;
 import pt.ist.fenixframework.core.exception.RecoverableRollbackException;
+import pt.ist.fenixframework.longtx.TransactionalContext;
 
 public class JVSTMTransactionManager extends AbstractTransactionManager {
 
@@ -59,9 +63,23 @@ public class JVSTMTransactionManager extends AbstractTransactionManager {
 
         logger.debug("Begin {}Transaction. Read Only: {}", (parent != null ? "(nested)" : ""), readOnly);
 
-        JvstmInFenixTransaction underlying = (JvstmInFenixTransaction) Transaction.begin(readOnly);
+        if (!LongTransactionSupport.isInsideContext()) {
+            JvstmInFenixTransaction underlying = (JvstmInFenixTransaction) Transaction.begin(readOnly);
+            transactions.set(new JVSTMTransaction(underlying, parent));
+        } else {
 
-        transactions.set(new JVSTMTransaction(underlying, parent));
+            TransactionalContext context = LongTransactionSupport.getContextForThread();
+
+            // The Top-Level Long Lived Transactions must be write transactions
+            JvstmInFenixTransaction underlying = (JvstmInFenixTransaction) Transaction.begin(false);
+
+            LongLivedTransaction longTx =
+                    readOnly ? new ReadOnlyLongLivedTransaction(context, underlying) : new LongLivedTransaction(context,
+                            underlying);
+            longTx.start();
+
+            transactions.set(new JVSTMTransaction(longTx, parent));
+        }
     }
 
     @Override

@@ -14,7 +14,7 @@ public interface JvstmInFenixTransaction {
 
     public <T> T getBoxValue(VBox<T> vbox);
 
-    public boolean isBoxValueLoaded(VBox vbox);
+    public boolean isBoxValueLoaded(VBox<?> vbox);
 
     /**
      * Get the value of the given {@link VBox} in a previous snapshot

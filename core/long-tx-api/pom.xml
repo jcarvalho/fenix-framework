@@ -1,16 +1,18 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>pt.ist</groupId>
-        <artifactId>fenix-framework-backend-jvstm-common</artifactId>
+        <artifactId>fenix-framework-core</artifactId>
         <!-- Perhaps in Maven 3.1 the version may be ommitted -->
         <version>2.4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>fenix-framework-backend-jvstm-common-runtime</artifactId>
-    <name>Fenix Framework backend JVSTM common Runtime</name>
-    <description>Code common to all JVSTM-based backends</description>
+    <artifactId>fenix-framework-core-long-tx-api</artifactId>
+    <name>Fenix Framework API for Long Lived Transactions</name>
 
     <build>
         <plugins>
@@ -31,7 +33,7 @@
                 </executions>
             </plugin>
 
-            <!-- setup jar maker not to include generated classes -->
+            <!-- setup jar maker not to include *_Base and ValueTypeSerializer -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -56,28 +58,14 @@
         </dependency>
         <dependency>
             <groupId>pt.ist</groupId>
-            <artifactId>fenix-framework-core-indexes-runtime</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.ist</groupId>
-            <artifactId>fenix-framework-core-hibernate-search</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.ist</groupId>
             <artifactId>fenix-framework-core-adt-bplustree</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>pt.ist</groupId>
-            <artifactId>fenix-framework-core-long-tx-api</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
-        <dependency>
-            <groupId>jvstm</groupId>
-            <artifactId>jvstm-fenix</artifactId>
-        </dependency>
+
     </dependencies>
 
 </project>

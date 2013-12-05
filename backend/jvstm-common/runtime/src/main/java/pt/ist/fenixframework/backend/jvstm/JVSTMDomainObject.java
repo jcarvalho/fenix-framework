@@ -13,10 +13,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.backend.jvstm.pstm.DomainClassInfo;
+import pt.ist.fenixframework.backend.jvstm.pstm.VBox;
 import pt.ist.fenixframework.backend.jvstm.pstm.VersionedSubject;
 import pt.ist.fenixframework.core.AbstractDomainObjectAdapter;
 import pt.ist.fenixframework.core.DomainObjectAllocator;
 import pt.ist.fenixframework.core.SharedIdentityMap;
+
+import com.google.gson.JsonElement;
 
 public abstract class JVSTMDomainObject extends AbstractDomainObjectAdapter {
     private static final Logger logger = LoggerFactory.getLogger(JVSTMDomainObject.class);
@@ -97,6 +100,18 @@ public abstract class JVSTMDomainObject extends AbstractDomainObjectAdapter {
         }
         logger.warn("Couldn't find attribute {}", attrName);
         return null;
+    }
+
+    public JsonElement getJSONElementForSlot(String slotName, Object value) {
+        throw new Error("Slot " + slotName + " does not exist!");
+    }
+
+    public Object getValueFromJSON(String slotName, JsonElement json) {
+        throw new Error("Slot " + slotName + " does not exist!");
+    }
+
+    public VBox<?> getBoxForSlot(String slotName) {
+        throw new Error("Box " + slotName + " not found!");
     }
 
 }

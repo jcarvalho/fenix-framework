@@ -9,11 +9,18 @@ package pt.ist.fenixframework.backend.jvstm;
 
 import java.io.PrintWriter;
 
+import pt.ist.fenixframework.DomainObject;
 import pt.ist.fenixframework.dml.CompilerArgs;
+import pt.ist.fenixframework.dml.DomainClass;
 import pt.ist.fenixframework.dml.DomainModel;
 import pt.ist.fenixframework.dml.IndexesCodeGenerator;
 import pt.ist.fenixframework.dml.Role;
 import pt.ist.fenixframework.dml.Slot;
+import pt.ist.fenixframework.dml.ValueType;
+import pt.ist.fenixframework.dml.ValueTypeSerializationGenerator;
+import pt.ist.fenixframework.util.JsonConverter;
+
+import com.google.gson.JsonElement;
 
 public class JVSTMCodeGenerator extends IndexesCodeGenerator {
 
@@ -53,6 +60,9 @@ public class JVSTMCodeGenerator extends IndexesCodeGenerator {
         println(out, "import pt.ist.fenixframework.FenixFramework;");
         println(out, "import pt.ist.fenixframework.backend.jvstm.pstm.VBox;");
         println(out, "import pt.ist.fenixframework.backend.jvstm.pstm.OwnedVBox;");
+        println(out, "import " + JsonElement.class.getName() + ";");
+        println(out, "import " + JsonConverter.class.getName() + ";");
+        println(out, "import " + DomainObject.class.getName() + ";");
     }
 
     //    // smf: maybe to delete? /replace with getboxtype or similar?
@@ -272,6 +282,155 @@ public class JVSTMCodeGenerator extends IndexesCodeGenerator {
         generateGetterDAPStatement(dC, role.getName(), role.getType().getFullName(), out);//DAP read stats update statement
         generateRoleStarGetterBody(role.getName(), getTypeFullName(role.getType()), out);
         endMethodBody(out);
+    }
+
+    @Override
+    protected void generateBaseClassBody(DomainClass domClass, PrintWriter out) {
+        super.generateBaseClassBody(domClass, out);
+
+        generateJSONInternalizer(domClass, out);
+        generateJSONExternalizer(domClass, out);
+        generateVBoxGetter(domClass, out);
+    }
+
+    protected void generateVBoxGetter(DomainClass domClass, PrintWriter out) {
+        newline(out);
+        printMethod(out, "public", "VBox<?>", "getBoxForSlot", makeArg("String", "slotName"));
+        startMethodBody(out);
+
+        for (Slot slot : domClass.getSlotsList()) {
+            generateVBoxGetterForSlot(out, slot.getName());
+        }
+
+        for (Role role : domClass.getRoleSlotsList()) {
+            if (role.getName() != null) {
+                generateVBoxGetterForSlot(out, decideRoleVBoxName(role));
+            }
+        }
+
+        newline(out);
+        print(out, "return super.getBoxForSlot(slotName);");
+        endMethodBody(out);
+
+    }
+
+    protected void generateVBoxGetterForSlot(PrintWriter out, String slotName) {
+        print(out, "if (slotName.equals(\"");
+        print(out, slotName);
+        print(out, "\")) return this.");
+        print(out, slotName);
+        println(out, ";");
+    }
+
+    protected void generateJSONExternalizer(DomainClass domClass, PrintWriter out) {
+
+        newline(out);
+        println(out, "@Override");
+        printMethod(out, "public", "JsonElement", "getJSONElementForSlot", makeArg("String", "slotName"),
+                makeArg("Object", "value"));
+        startMethodBody(out);
+
+        for (Slot slot : domClass.getSlotsList()) {
+            generateJSONExternalizerForSlot(domClass, slot, out);
+        }
+
+        for (Role role : domClass.getRoleSlotsList()) {
+            if (role.getName() != null) {
+                generateJSONExternalizerForRoleSlot(domClass, role, out);
+            }
+        }
+
+        newline(out);
+        print(out, "return super.getJSONElementForSlot(slotName, value);");
+
+        endMethodBody(out);
+    }
+
+    protected void generateJSONExternalizerForSlot(DomainClass domClass, Slot slot, PrintWriter out) {
+        print(out, "if (slotName.equals(\"");
+        print(out, slot.getName());
+        print(out, "\")) ");
+
+        ValueType vt = slot.getSlotType();
+
+        print(out, "return JsonConverter.getJsonFor(");
+
+        if (vt.isBuiltin() || vt.isEnum()) {
+            print(out, "(");
+            print(out, slot.getTypeName());
+            print(out, ") value);");
+        } else {
+            print(out, ValueTypeSerializationGenerator.SERIALIZER_CLASS_FULL_NAME);
+            print(out, ".");
+            print(out, ValueTypeSerializationGenerator.SERIALIZATION_METHOD_PREFIX);
+            print(out, ValueTypeSerializationGenerator.makeSafeValueTypeName(vt));
+            print(out, "((");
+            print(out, slot.getTypeName());
+            print(out, ") value));");
+        }
+
+        newline(out);
+    }
+
+    protected void generateJSONExternalizerForRoleSlot(DomainClass domClass, Role role, PrintWriter out) {
+        print(out, "if (slotName.equals(\"");
+        print(out, decideRoleVBoxName(role));
+        println(out, "\")) return JsonConverter.getJsonFor((DomainObject) value);");
+    }
+
+    protected void generateJSONInternalizer(DomainClass domClass, PrintWriter out) {
+        newline(out);
+        printMethod(out, "public", "Object", "getValueFromJSON", makeArg("String", "slotName"), makeArg("JsonElement", "json"));
+        startMethodBody(out);
+
+        for (Slot slot : domClass.getSlotsList()) {
+            generateJSONInternalizerForSlot(domClass, slot, out);
+        }
+
+        for (Role role : domClass.getRoleSlotsList()) {
+            if (role.getName() != null) {
+                generateJSONInternalizerForRoleSlot(domClass, role, out);
+            }
+        }
+
+        newline(out);
+        print(out, "return super.getValueFromJSON(slotName, json);");
+
+        endMethodBody(out);
+    }
+
+    protected void generateJSONInternalizerForSlot(DomainClass domClass, Slot slot, PrintWriter out) {
+        print(out, "if (slotName.equals(\"");
+        print(out, slot.getName());
+        print(out, "\")) ");
+
+        ValueType vt = slot.getSlotType();
+
+        print(out, "return ");
+
+        if (vt.isEnum()) {
+            print(out, "JsonConverter.getEnumFromJson(");
+            print(out, vt.getFullname());
+            print(out, ".class, json);");
+        } else if (vt.isBuiltin()) {
+            print(out, "JsonConverter.get" + capitalize(vt.getDomainName()) + "FromJson(json);");
+        } else {
+            print(out, ValueTypeSerializationGenerator.SERIALIZER_CLASS_FULL_NAME);
+            print(out, ".");
+            print(out, ValueTypeSerializationGenerator.DESERIALIZATION_METHOD_PREFIX);
+            print(out, ValueTypeSerializationGenerator.makeSafeValueTypeName(vt));
+            print(out, "(");
+            print(out, "JsonConverter.get" + ValueTypeSerializationGenerator.getSerializedFormTypeName(vt, true)
+                    + "FromJson(json));");
+        }
+
+        newline(out);
+    }
+
+    protected void generateJSONInternalizerForRoleSlot(DomainClass domClass, Role role, PrintWriter out) {
+        print(out, "if (slotName.equals(\"");
+        print(out, decideRoleVBoxName(role));
+        println(out, "\")) return JsonConverter.getDomainObjectFromJson(json);");
     }
 
 }

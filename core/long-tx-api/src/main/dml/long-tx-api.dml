@@ -1,0 +1,23 @@
+package pt.ist.fenixframework.longtx;
+
+enum pt.ist.fenixframework.longtx.TransactionalContextState as TransactionalContextState;
+
+valueType pt.ist.fenixframework.longtx.ReadSet as ReadSet {
+    externalizeWith {
+        JsonElement toJSON();
+    }
+}
+
+valueType pt.ist.fenixframework.longtx.WriteSet as WriteSet {
+    externalizeWith {
+        JsonElement toJSON();
+    }
+}
+
+class TransactionalContext {
+    String name;
+    Integer version;
+    TransactionalContextState state;
+    ReadSet readSet;
+    WriteSet writeSet;
+}

@@ -7,6 +7,7 @@ import javax.transaction.SystemException;
 
 import jvstm.CommitException;
 import jvstm.Transaction;
+import pt.ist.fenixframework.backend.jvstm.longtx.LongLivedTransaction;
 import pt.ist.fenixframework.backend.jvstm.pstm.JvstmInFenixTransaction;
 import pt.ist.fenixframework.core.AbstractTransaction;
 import pt.ist.fenixframework.core.TransactionError;
@@ -50,6 +51,9 @@ public class JVSTMTransaction extends AbstractTransaction {
 
         try {
             Transaction.commit();
+            if (underlyingTransaction instanceof LongLivedTransaction) {
+                Transaction.commit();
+            }
         } catch (CommitException e) {
             throw new JvstmCommitError();
         }
@@ -62,6 +66,9 @@ public class JVSTMTransaction extends AbstractTransaction {
         }
 
         Transaction.abort();
+        if (underlyingTransaction instanceof LongLivedTransaction) {
+            Transaction.abort();
+        }
     }
 
     private static final class JvstmCommitError extends TransactionError {
