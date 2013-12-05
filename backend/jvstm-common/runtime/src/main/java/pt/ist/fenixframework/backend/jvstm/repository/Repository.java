@@ -74,13 +74,13 @@ public interface Repository {
     public void updateMaxCounterForClass(DomainClassInfo domainClassInfo, int newCounterValue);
 
     // reloads a primitive value from the storage for the specified box
-    public void reloadPrimitiveAttribute(VBox box);
+    public <T> void reloadPrimitiveAttribute(VBox<T> box, int version);
 
     // reloads a reference attribute from the storage for the specified box
-    public void reloadReferenceAttribute(VBox box);
+    public <T> void reloadReferenceAttribute(VBox<T> box, int version);
 
     // reloads an attribute from the storage for the specified box
-    public void reloadAttribute(VBox box);
+    public <T> void reloadAttribute(VBox<T> box, int version);
 
     // reloads an attribute from the storage for the specified box body only
     public void reloadAttributeSingleVersion(VBox box, VBoxBody body);

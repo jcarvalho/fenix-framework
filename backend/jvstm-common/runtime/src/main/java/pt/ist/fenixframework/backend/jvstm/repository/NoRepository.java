@@ -35,17 +35,17 @@ public class NoRepository implements Repository {
     }
 
     @Override
-    public void reloadPrimitiveAttribute(VBox box) {
+    public <T> void reloadPrimitiveAttribute(VBox<T> box, int number) {
         throw new UnsupportedOperationException("should not be invoked when using the NoRepository implementation");
     }
 
     @Override
-    public void reloadReferenceAttribute(VBox box) {
+    public <T> void reloadReferenceAttribute(VBox<T> box, int number) {
         throw new UnsupportedOperationException("should not be invoked when using the NoRepository implementation");
     }
 
     @Override
-    public void reloadAttribute(VBox box) {
+    public <T> void reloadAttribute(VBox<T> box, int version) {
         throw new UnsupportedOperationException("should not be invoked when using the NoRepository implementation");
     }
 

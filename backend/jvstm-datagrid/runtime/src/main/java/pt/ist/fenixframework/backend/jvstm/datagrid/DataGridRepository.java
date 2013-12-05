@@ -137,13 +137,13 @@ public class DataGridRepository implements Repository {
     }
 
     @Override
-    public void reloadPrimitiveAttribute(VBox box) {
-        reloadAttribute(box);
+    public void reloadPrimitiveAttribute(VBox box, int version) {
+        reloadAttribute(box, version);
     }
 
     @Override
-    public void reloadReferenceAttribute(VBox box) {
-        reloadAttribute(box);
+    public void reloadReferenceAttribute(VBox box, int version) {
+        reloadAttribute(box, version);
     }
 
     // stores persistently a set of changes
@@ -275,9 +275,7 @@ public class DataGridRepository implements Repository {
     }
 
     @Override
-    public void reloadAttribute(VBox box) {
-        int txNumber = jvstm.Transaction.current().getNumber();
-
+    public void reloadAttribute(VBox box, int txNumber) {
         List<VersionedValue> vvalues = getMostRecentVersions(box, txNumber);
         box.mergeVersions(vvalues);
     }
@@ -285,7 +283,7 @@ public class DataGridRepository implements Repository {
     @Override
     public void reloadAttributeSingleVersion(VBox box, jvstm.VBoxBody body) {
         logger.debug("Reloading single version is not supported. Will reload entire vbox.");
-        reloadAttribute(box);
+        reloadAttribute(box, jvstm.Transaction.current().getNumber());
     }
 
     List<VersionedValue> getMostRecentVersions(final VBox vbox, final int desiredVersion) {

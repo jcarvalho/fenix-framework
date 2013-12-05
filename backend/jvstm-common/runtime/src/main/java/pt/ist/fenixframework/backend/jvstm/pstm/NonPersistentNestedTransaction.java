@@ -29,6 +29,12 @@ public class NonPersistentNestedTransaction extends NestedTransaction implements
     }
 
     @Override
+    public <T> T getPreviousBoxValue(VBox<T> vbox, int version) {
+        // Delegate the read to the parent
+        return ((JvstmInFenixTransaction) getParent()).getPreviousBoxValue(vbox, version);
+    }
+
+    @Override
     public boolean isBoxValueLoaded(VBox vbox) {
         return true;
     }

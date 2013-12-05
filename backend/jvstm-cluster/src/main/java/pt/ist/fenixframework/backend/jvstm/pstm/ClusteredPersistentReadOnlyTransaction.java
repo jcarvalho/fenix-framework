@@ -29,7 +29,7 @@ public class ClusteredPersistentReadOnlyTransaction extends ClusteredPersistentT
         numBoxReads++;
         VBoxBody<T> body = vbox.getBody(number);
         if (body.value == VBox.NOT_LOADED_VALUE) {
-            vbox.reload();
+            vbox.reload(number);
             // after the reload, the (new) body should have the required loaded value
             // if not, then something went wrong and it's better to abort
             // body = vbox.body.getBody(number);

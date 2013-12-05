@@ -366,14 +366,14 @@ public class InfinispanRepository implements Repository {
 
     // reloads a primitive value from the storage for the specified box
     @Override
-    public void reloadPrimitiveAttribute(VBox box) {
-        reloadAttribute(box);
+    public void reloadPrimitiveAttribute(VBox box, int version) {
+        reloadAttribute(box, version);
     }
 
     // reloads a reference attribute from the storage for the specified box
     @Override
-    public void reloadReferenceAttribute(VBox box) {
-        reloadAttribute(box);
+    public void reloadReferenceAttribute(VBox box, int version) {
+        reloadAttribute(box, version);
     }
 
     // stores persistently a set of changes
@@ -449,9 +449,7 @@ public class InfinispanRepository implements Repository {
     /* utility methods used by the implementation of the Repository interface methods */
 
     @Override
-    public void reloadAttribute(VBox box) {
-        int txNumber = jvstm.Transaction.current().getNumber();
-
+    public void reloadAttribute(VBox box, int txNumber) {
         List<VersionedValue> vvalues = getMostRecentVersions(box, txNumber);
         box.mergeVersions(vvalues);
     }
@@ -459,7 +457,7 @@ public class InfinispanRepository implements Repository {
     @Override
     public void reloadAttributeSingleVersion(VBox box, jvstm.VBoxBody body) {
         logger.debug("Reloading single version is not supported. Will reload entire vbox.");
-        reloadAttribute(box);
+        reloadAttribute(box, jvstm.Transaction.current().getNumber());
     }
 
     List<VersionedValue> getMostRecentVersions(final VBox vbox, final int desiredVersion) {

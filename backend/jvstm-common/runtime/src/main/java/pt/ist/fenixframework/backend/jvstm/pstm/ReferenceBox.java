@@ -28,11 +28,11 @@ class ReferenceBox<E> extends OwnedVBox<E> {
     }
 
     @Override
-    protected void doReload(/*Object obj, String attr*/) {
+    protected void doReload(int version) {
         if (logger.isDebugEnabled()) {
             logger.debug("Reload ReferenceVBox: slot {} for id {}", this.slotName, this.ownerObj.getExternalId());
         }
 
-        JVSTMBackEnd.getInstance().getRepository().reloadReferenceAttribute(this);
+        JVSTMBackEnd.getInstance().getRepository().reloadReferenceAttribute(this, version);
     }
 }

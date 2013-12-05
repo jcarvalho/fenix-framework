@@ -175,13 +175,13 @@ public class LockFreeRepository implements ExtendedRepository {
     }
 
     @Override
-    public void reloadPrimitiveAttribute(VBox box) {
-        reloadAttribute(box);
+    public void reloadPrimitiveAttribute(VBox box, int txNumber) {
+        reloadAttribute(box, txNumber);
     }
 
     @Override
-    public void reloadReferenceAttribute(VBox box) {
-        reloadAttribute(box);
+    public void reloadReferenceAttribute(VBox box, int txNumber) {
+        reloadAttribute(box, txNumber);
     }
 
     // stores persistently a set of changes
@@ -402,9 +402,7 @@ public class LockFreeRepository implements ExtendedRepository {
     a 'loaded' version.  We may allow bodies to contain the NOT_LOADED_VALUE if
     their version is not 0. */
     @Override
-    public void reloadAttribute(VBox box) {
-        int txNumber = jvstm.Transaction.current().getNumber();
-
+    public void reloadAttribute(VBox box, int txNumber) {
         boolean success = false;
 
         VBoxBody oldestValidBody = box.getOldestValidBody();

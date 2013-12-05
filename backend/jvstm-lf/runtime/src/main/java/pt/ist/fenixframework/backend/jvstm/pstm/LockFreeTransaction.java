@@ -403,4 +403,9 @@ public class LockFreeTransaction extends ConsistentTopLevelTransaction implement
         }
     }
 
+    @Override
+    public <T> T getPreviousBoxValue(VBox<T> vbox, int version) {
+        return vbox.getBody(version).value;
+    }
+
 }

@@ -123,7 +123,7 @@ public abstract class VBox<E> extends jvstm.VBox<E> implements VersionedSubject,
             VBoxBody<E> body = getBody(requiredVersion);
             if (body.value == VBox.NOT_LOADED_VALUE) {
                 if (body.version == 0) {
-                    doReload();
+                    doReload(requiredVersion);
                 } else {
                     reloadBody(body);
                 }
@@ -155,7 +155,7 @@ public abstract class VBox<E> extends jvstm.VBox<E> implements VersionedSubject,
         return current;
     }
 
-    protected abstract void doReload();
+    protected abstract void doReload(int version);
 
     protected void reloadBody(VBoxBody<E> body) {
         if (logger.isDebugEnabled()) {

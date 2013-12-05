@@ -67,4 +67,9 @@ public class NonPersistentTopLevelTransaction extends TopLevelTransaction implem
         }
     }
 
+    @Override
+    public <T> T getPreviousBoxValue(VBox<T> vbox, int version) {
+        return vbox.getBody(version).value;
+    }
+
 }

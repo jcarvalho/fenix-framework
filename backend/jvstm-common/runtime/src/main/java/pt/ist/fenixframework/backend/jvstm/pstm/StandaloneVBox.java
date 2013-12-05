@@ -36,11 +36,11 @@ public class StandaloneVBox<E> extends VBox<E> {
     }
 
     @Override
-    protected void doReload() {
-        logger.debug("Reload StandaloneVBox: {}", this.getId());
+    protected void doReload(int version) {
+        logger.debug("Reload StandaloneVBox: {} in version {}", this.getId(), version);
 
         try {
-            JVSTMBackEnd.getInstance().getRepository().reloadAttribute(this);
+            JVSTMBackEnd.getInstance().getRepository().reloadAttribute(this, version);
         } catch (PersistenceException e) {
             VBoxBody<E> body = getBody(Transaction.current().getNumber());
             if (body != null && body.version == 0) {

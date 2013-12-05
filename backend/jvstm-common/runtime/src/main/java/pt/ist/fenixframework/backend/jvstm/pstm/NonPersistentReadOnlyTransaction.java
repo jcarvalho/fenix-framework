@@ -38,6 +38,11 @@ public class NonPersistentReadOnlyTransaction extends ReadTransaction implements
     }
 
     @Override
+    public <T> T getPreviousBoxValue(VBox<T> vbox, int version) {
+        return vbox.getBody(version).value;
+    }
+
+    @Override
     public boolean isBoxValueLoaded(VBox vbox) {
         return true;
     }

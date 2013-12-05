@@ -152,7 +152,7 @@ public class PersistentTransaction extends ConsistentTopLevelTransaction impleme
             //VBoxBody<T> body = vbox.body.getBody(number);
             VBoxBody<T> body = vbox.getBody(number);
             if (body.value == VBox.NOT_LOADED_VALUE) {
-                vbox.reload();
+                vbox.reload(number);
                 // after the reload, the (new) body should have the required loaded value
                 // if not, then something gone wrong and its better to abort
                 // body = vbox.body.getBody(number);
@@ -171,6 +171,23 @@ public class PersistentTransaction extends ConsistentTopLevelTransaction impleme
         }
 
         return (value == NULL_VALUE) ? null : value;
+    }
+
+    @Override
+    public <T> T getPreviousBoxValue(VBox<T> vbox, int version) {
+        VBoxBody<T> body = vbox.getBody(version);
+        if (body.value == VBox.NOT_LOADED_VALUE) {
+            vbox.reload(version);
+            // after the reload, the (new) body should have the required loaded value
+            // if not, then something gone wrong and its better to abort
+            // body = vbox.body.getBody(number);
+            body = vbox.getBody(version);
+            if (body.value == VBox.NOT_LOADED_VALUE) {
+                logger.error("Couldn't load the VBox: {}", vbox.getId());
+                throw new VersionNotAvailableException();
+            }
+        }
+        return body.value;
     }
 
     @Override
