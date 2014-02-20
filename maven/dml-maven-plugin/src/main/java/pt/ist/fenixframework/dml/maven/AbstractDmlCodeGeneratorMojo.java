@@ -1,7 +1,6 @@
 package pt.ist.fenixframework.dml.maven;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +51,10 @@ public abstract class AbstractDmlCodeGeneratorMojo extends AbstractMojo {
 
     protected abstract List<String> getClasspathElements();
 
+    protected boolean isTest() {
+        return false;
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         if (getMavenProject().getArtifact().getType().equals("pom")) {
@@ -69,14 +72,14 @@ public abstract class AbstractDmlCodeGeneratorMojo extends AbstractMojo {
 
         DmlMojoUtils.augmentClassLoader(getLog(), classpath);
 
-        CompilerArgs compArgs = null;
-        long latestBuildTime = getGeneratedSourcesDirectory().lastModified();
-
-        boolean shouldCompile = getMavenProject().getArtifact().getType().trim().equalsIgnoreCase("war");
-        List<URL> dmlFiles = new ArrayList<URL>();
-        if (getDmlSourceDirectory().exists()) {
+        List<File> dmlFiles = new ArrayList<File>();
+        if (getDmlSourceDirectory().exists() || isTest()) {
             DirectoryScanner scanner = new DirectoryScanner();
-            scanner.setBasedir(getDmlSourceDirectory());
+            if (isTest()) {
+                scanner.setBasedir(getDmlSourceDirectory().getParentFile().getParentFile());
+            } else {
+                scanner.setBasedir(getDmlSourceDirectory());
+            }
 
             String[] includes = { "**\\*.dml" };
             scanner.setIncludes(includes);
@@ -89,31 +92,20 @@ public abstract class AbstractDmlCodeGeneratorMojo extends AbstractMojo {
             getMavenProject().addTestResource(resource);
 
             for (String includedFile : scanner.getIncludedFiles()) {
-                String filePath = getDmlSourceDirectory().getAbsolutePath() + "/" + includedFile;
+                String filePath = scanner.getBasedir().getAbsolutePath() + "/" + includedFile;
                 File file = new File(filePath);
-                try {
-                    dmlFiles.add(file.toURI().toURL());
-                } catch (MalformedURLException e) {
-                    getLog().error(e);
-                }
-                boolean isModified = file.lastModified() > latestBuildTime;
-                if (verbose()) {
-                    getLog().info(includedFile + " : " + (isModified ? "not up to date" : "up to date"));
-                }
-                shouldCompile = shouldCompile || isModified;
+                dmlFiles.add(file);
             }
-            Collections.sort(dmlFiles, new Comparator<URL>() {
+            Collections.sort(dmlFiles, new Comparator<File>() {
                 @Override
-                public int compare(URL o1, URL o2) {
-                    return o1.toExternalForm().compareTo(o2.toExternalForm());
+                public int compare(File f1, File f2) {
+                    return f1.getAbsolutePath().compareTo(f2.getAbsolutePath());
                 }
             });
         }
 
         try {
-            Project project =
-                    DmlMojoUtils.getProject(getMavenProject(), getDmlSourceDirectory(), getGeneratedSourcesDirectory(), dmlFiles,
-                            getLog(), verbose());
+            Project project = DmlMojoUtils.getProject(getMavenProject(), dmlFiles, isTest());
 
             List<URL> allDmls = new ArrayList<URL>();
             for (DmlFile dmlFile : project.getFullDmlSortedList()) {
@@ -123,14 +115,14 @@ public abstract class AbstractDmlCodeGeneratorMojo extends AbstractMojo {
             String checksumPath = getGeneratedSourcesDirectory().getAbsolutePath() + ".checksum";
             final File checksumFile = new File(checksumPath);
 
-            String dmlContent = new String();
+            StringBuilder dmlContent = new StringBuilder();
 
             boolean checksumShouldCompile = true;
 
             for (URL dmlUrl : allDmls) {
-                dmlContent = dmlContent.concat(IOUtils.toString(dmlUrl.openStream()));
+                dmlContent.append(IOUtils.toString(dmlUrl.openStream()));
             }
-            final String dmlMd5 = DigestUtils.md5Hex(dmlContent);
+            final String dmlMd5 = DigestUtils.md5Hex(dmlContent.toString());
 
             if (!checksumFile.exists()) {
                 FileUtils.writeStringToFile(checksumFile, dmlMd5);
@@ -146,24 +138,25 @@ public abstract class AbstractDmlCodeGeneratorMojo extends AbstractMojo {
                 return;
             }
 
-            //if (artifact.shouldCompile() || shouldCompile) {
             if (checksumShouldCompile) {
                 // Split all DML files in two sets: local and external.
                 List<URL> localDmls = new ArrayList<URL>();
                 for (DmlFile dmlFile : project.getDmls()) {
-                    localDmls.add(dmlFile.getUrl());
+                    URL dmlUrl = dmlFile.getUrl();
+                    if (dmlUrl.toExternalForm().contains(getDmlSourceDirectory().getAbsolutePath())) {
+                        localDmls.add(dmlUrl);
+                    }
                 }
                 List<URL> externalDmls = new ArrayList<URL>(allDmls);
                 externalDmls.removeAll(localDmls);
 
                 getSourcesDirectory().mkdirs();
-                getSourcesDirectory().setLastModified(System.currentTimeMillis());
                 if (verbose()) {
                     getLog().info("Using generator: " + getCodeGeneratorClass().getName());
                 }
                 Map<String, String> realParams = getParams() == null ? new HashMap<String, String>() : getParams();
 
-                compArgs =
+                CompilerArgs compArgs =
                         new CompilerArgs(getMavenProject().getArtifactId(), getSourcesDirectory(),
                                 getGeneratedSourcesDirectory(), getPackageName(), generateFinals(), getCodeGeneratorClass(),
                                 localDmls, externalDmls, realParams);
@@ -180,6 +173,7 @@ public abstract class AbstractDmlCodeGeneratorMojo extends AbstractMojo {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Class<? extends CodeGenerator> getCodeGeneratorClass() throws ClassNotFoundException {
         return (Class<? extends CodeGenerator>) Class.forName(getCodeGeneratorClassName());
     }

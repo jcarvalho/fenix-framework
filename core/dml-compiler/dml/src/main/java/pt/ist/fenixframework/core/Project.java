@@ -74,6 +74,7 @@ public class Project {
         return dmls;
     }
 
+    @Deprecated
     public boolean shouldCompile() {
         return shouldCompile;
     }

@@ -2,7 +2,6 @@ package pt.ist.fenixframework.dml.maven;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -90,7 +89,7 @@ public class DmlZipCreatorMojo extends AbstractMojo {
 
         DmlMojoUtils.augmentClassLoader(getLog(), classpath);
 
-        List<URL> dmlFiles = new ArrayList<URL>();
+        List<File> dmlFiles = new ArrayList<File>();
         if (dmlSourceDirectory.exists()) {
             DirectoryScanner scanner = new DirectoryScanner();
             scanner.setBasedir(dmlSourceDirectory);
@@ -107,24 +106,18 @@ public class DmlZipCreatorMojo extends AbstractMojo {
             for (String includedFile : scanner.getIncludedFiles()) {
                 String filePath = dmlSourceDirectory.getAbsolutePath() + "/" + includedFile;
                 File file = new File(filePath);
-                try {
-                    dmlFiles.add(file.toURI().toURL());
-                } catch (MalformedURLException e) {
-                    getLog().error(e);
-                }
+                dmlFiles.add(file);
             }
-            Collections.sort(dmlFiles, new Comparator<URL>() {
+            Collections.sort(dmlFiles, new Comparator<File>() {
                 @Override
-                public int compare(URL o1, URL o2) {
-                    return o1.toExternalForm().compareTo(o2.toExternalForm());
+                public int compare(File f1, File f2) {
+                    return f1.getAbsolutePath().compareTo(f2.getAbsolutePath());
                 }
             });
         }
 
         try {
-            Project project =
-                    DmlMojoUtils.getProject(mavenProject, dmlSourceDirectory, zipDestinationDirectory, dmlFiles, getLog(),
-                            verbose);
+            Project project = DmlMojoUtils.getProject(mavenProject, dmlFiles, false);
 
             List<URL> dmls = new ArrayList<URL>();
             for (DmlFile dmlFile : project.getFullDmlSortedList()) {

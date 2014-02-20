@@ -184,4 +184,9 @@ public class TestDmlCodeGeneratorMojo extends AbstractDmlCodeGeneratorMojo {
         }
         return null;
     }
+
+    @Override
+    protected boolean isTest() {
+        return true;
+    }
 }
