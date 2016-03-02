@@ -51,6 +51,8 @@ public class TopLevelTransaction extends ConsistentTopLevelTransaction implement
     private static int NUM_READS_THRESHOLD = 10000000;
     private static int NUM_WRITES_THRESHOLD = 100000;
 
+    private static final boolean HAS_META_OBJECTS = JvstmOJBConfig.canCreateDomainMetaObjects();
+
     public static Lock getCommitlock() {
         return COMMIT_LOCK;
     }
@@ -440,7 +442,7 @@ public class TopLevelTransaction extends ConsistentTopLevelTransaction implement
      */
     @Override
     protected void recheckDependenceRecord(DependenceRecord dependence) {
-        if (!JvstmOJBConfig.canCreateDomainMetaObjects()) {
+        if (!HAS_META_OBJECTS) {
             // This should never happen
             throw new Error("Cannot recheck dependence records unless the framework is allowed to create meta objects");
         }
@@ -495,7 +497,7 @@ public class TopLevelTransaction extends ConsistentTopLevelTransaction implement
             return;
         }
         AbstractDomainObject ado = (AbstractDomainObject) object;
-        if (!JvstmOJBConfig.canCreateDomainMetaObjects()) {
+        if (!HAS_META_OBJECTS) {
             for (Method predicate : ConsistencyPredicateSystem.getPredicatesFor(object)) {
                 checkPredicateForOneObject(ado, predicate, true);
             }
@@ -544,7 +546,7 @@ public class TopLevelTransaction extends ConsistentTopLevelTransaction implement
      */
     @Override
     protected Iterator<DependenceRecord> getDependenceRecordsToRecheck() {
-        if (!JvstmOJBConfig.canCreateDomainMetaObjects()) {
+        if (!HAS_META_OBJECTS) {
             // Dependence records are not used if the FenixFramework is not configured
             // to create meta objects
             return Collections.emptyIterator();

@@ -19,6 +19,8 @@ import pt.ist.fenixframework.backend.jvstmojb.JvstmOJBConfig;
 
 public class FenixConsistencyCheckTransaction extends ReadTransaction implements ConsistencyCheckTransaction, FenixTransaction {
 
+    private static final boolean HAS_META_OBJECTS = JvstmOJBConfig.canCreateDomainMetaObjects();
+
     protected HashSet<VBox> boxesRead = new HashSet<VBox>();
 
     private final FenixTransaction parent;
@@ -44,7 +46,7 @@ public class FenixConsistencyCheckTransaction extends ReadTransaction implements
 
     @Override
     public Set<Depended> getDepended() {
-        if (!JvstmOJBConfig.canCreateDomainMetaObjects()) {
+        if (!HAS_META_OBJECTS) {
             return EMPTY_SET;
         }
         Set<Depended> dependedSet = new HashSet<Depended>(boxesRead.size());
@@ -81,7 +83,7 @@ public class FenixConsistencyCheckTransaction extends ReadTransaction implements
     @Override
     public <T> T getBoxValue(VBox<T> vbox, Object obj, String attr) {
         if (obj != checkedObj) {
-            if (!JvstmOJBConfig.canCreateDomainMetaObjects()) {
+            if (!HAS_META_OBJECTS) {
                 throw new Error("Consistency predicates are not allowed to access other objects, "
                         + "unless the FenixFramework is configured to create DomainMetaObjects. "
                         + "See: JvstmOJBConfig.canCreateDomainMetaObjects");

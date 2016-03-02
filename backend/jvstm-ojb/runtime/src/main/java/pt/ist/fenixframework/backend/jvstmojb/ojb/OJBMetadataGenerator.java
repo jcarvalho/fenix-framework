@@ -15,6 +15,7 @@ import org.apache.ojb.broker.metadata.fieldaccess.PersistentField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.fenixframework.backend.jvstmojb.JvstmOJBConfig;
 import pt.ist.fenixframework.backend.jvstmojb.repository.DbUtil;
 import pt.ist.fenixframework.backend.jvstmojb.repository.database.JDBCTypeMap;
 import pt.ist.fenixframework.core.DomainObjectAllocator;
@@ -118,8 +119,10 @@ public class OJBMetadataGenerator {
 
         addPrimaryFieldDescriptor(domainModel, "oid", "long", fieldID++, classDescriptor, persistentFieldClass);
 
-        // write the domainMetaObject for all domain objects
-        addFieldDescriptor(domainModel, "oidDomainMetaObject", "Long", fieldID++, classDescriptor, persistentFieldClass);
+        if (JvstmOJBConfig.canCreateDomainMetaObjects()) {
+            // write the domainMetaObject for all domain objects if Meta Objects are enabled
+            addFieldDescriptor(domainModel, "oidDomainMetaObject", "Long", fieldID++, classDescriptor, persistentFieldClass);
+        }
 
         while (domEntity instanceof DomainClass) {
             DomainClass dClass = (DomainClass) domEntity;

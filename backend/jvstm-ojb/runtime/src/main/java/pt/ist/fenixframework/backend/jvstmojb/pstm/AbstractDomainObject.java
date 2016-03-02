@@ -21,6 +21,8 @@ import pt.ist.fenixframework.core.SharedIdentityMap;
 
 public abstract class AbstractDomainObject extends AbstractDomainObjectAdapter {
 
+    private static final boolean HAS_META_OBJECTS = JvstmOJBConfig.canCreateDomainMetaObjects();
+
     private static final Logger logger = LoggerFactory.getLogger(AbstractDomainObject.class);
 
     private long oid;
@@ -39,13 +41,15 @@ public abstract class AbstractDomainObject extends AbstractDomainObjectAdapter {
         super();
         TransactionSupport.storeNewObject(this);
 
-        initMetaObject(false);
+        if (HAS_META_OBJECTS) {
+            initMetaObject(false);
 
-        if (JvstmOJBConfig.canCreateDomainMetaObjects() && !getClass().isAnnotationPresent(NoDomainMetaObjects.class)) {
-            DomainMetaObject metaObject = new DomainMetaObject();
-            metaObject.setDomainObject(this);
+            if (!getClass().isAnnotationPresent(NoDomainMetaObjects.class)) {
+                DomainMetaObject metaObject = new DomainMetaObject();
+                metaObject.setDomainObject(this);
 
-            getDomainMetaClass().addExistingDomainMetaObject(getDomainMetaObject());
+                getDomainMetaClass().addExistingDomainMetaObject(getDomainMetaObject());
+            }
         }
     }
 
@@ -53,7 +57,9 @@ public abstract class AbstractDomainObject extends AbstractDomainObjectAdapter {
         super(oid);
         this.oid = ((Long) oid.oid).longValue();
 
-        initMetaObject(true);
+        if (HAS_META_OBJECTS) {
+            initMetaObject(true);
+        }
     }
 
     private void initMetaObject(boolean allocateOnly) {
@@ -125,11 +131,17 @@ public abstract class AbstractDomainObject extends AbstractDomainObjectAdapter {
     }
 
     public DomainMetaObject getDomainMetaObject() {
-        return domainMetaObject.get(this, "domainMetaObject");
+        if (HAS_META_OBJECTS) {
+            return domainMetaObject.get(this, "domainMetaObject");
+        } else {
+            return null;
+        }
     }
 
     public void justSetMetaObject(DomainMetaObject domainMetaObject) {
-        this.domainMetaObject.put(this, "domainMetaObject", domainMetaObject);
+        if (HAS_META_OBJECTS) {
+            this.domainMetaObject.put(this, "domainMetaObject", domainMetaObject);
+        }
     }
 
     private void setMetaObject(DomainMetaObject domainMetaObject) {
@@ -157,8 +169,10 @@ public abstract class AbstractDomainObject extends AbstractDomainObjectAdapter {
     }
 
     protected void readMetaObjectFromResultSet(java.sql.ResultSet rs, int txNumber) throws SQLException {
-        DomainMetaObject metaObject = ResultSetReader.readDomainObject(rs, "OID_DOMAIN_META_OBJECT");
-        this.domainMetaObject.persistentLoad(metaObject, txNumber);
+        if (HAS_META_OBJECTS) {
+            DomainMetaObject metaObject = ResultSetReader.readDomainObject(rs, "OID_DOMAIN_META_OBJECT");
+            this.domainMetaObject.persistentLoad(metaObject, txNumber);
+        }
     }
 
     protected abstract void readSlotsFromResultSet(java.sql.ResultSet rs, int txNumber) throws java.sql.SQLException;
@@ -175,7 +189,9 @@ public abstract class AbstractDomainObject extends AbstractDomainObjectAdapter {
     protected void deleteDomainObject() {
         invokeDeletionListeners();
         checkDisconnected();
-        deleteDomainMetaObject();
+        if (HAS_META_OBJECTS) {
+            deleteDomainMetaObject();
+        }
         TransactionSupport.deleteObject(this);
     }
 
