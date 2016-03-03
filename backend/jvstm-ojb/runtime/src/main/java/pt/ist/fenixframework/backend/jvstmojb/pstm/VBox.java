@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.DomainObject;
 
+import java.sql.SQLException;
+
 public class VBox<E> extends jvstm.VBox<E> implements VersionedSubject {
 
     private static final Logger logger = LoggerFactory.getLogger(VBox.class);
@@ -137,7 +139,7 @@ public class VBox<E> extends jvstm.VBox<E> implements VersionedSubject {
         }
     }
 
-    protected void doReload(Object obj, String attr) {
+    protected void doReload(Object obj, String attr) throws SQLException {
         throw new Error("Can't reload a simple VBox.  Use a PrimitiveBox or a ReferenceBox instead.");
     }
 

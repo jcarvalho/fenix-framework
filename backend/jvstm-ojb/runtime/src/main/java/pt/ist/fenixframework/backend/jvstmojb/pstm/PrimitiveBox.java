@@ -2,11 +2,10 @@ package pt.ist.fenixframework.backend.jvstmojb.pstm;
 
 import jvstm.VBoxBody;
 
-import org.apache.ojb.broker.Identity;
-import org.apache.ojb.broker.PersistenceBroker;
-import org.apache.ojb.broker.metadata.ClassDescriptor;
-
 import pt.ist.fenixframework.DomainObject;
+import pt.ist.fenixframework.backend.jvstmojb.repository.DomainRepository;
+
+import java.sql.SQLException;
 
 class PrimitiveBox<E> extends VBox<E> {
 
@@ -19,10 +18,7 @@ class PrimitiveBox<E> extends VBox<E> {
     }
 
     @Override
-    protected void doReload(Object obj, String attr) {
-        PersistenceBroker pb = TransactionSupport.getOJBBroker();
-        Identity oid = new Identity(obj, pb);
-        ClassDescriptor cld = pb.getClassDescriptor(obj.getClass());
-        pb.serviceJdbcAccess().materializeObject(cld, oid);
+    protected void doReload(Object obj, String attr) throws SQLException {
+        DomainRepository.reloadObject((OneBoxDomainObject) obj, TransactionSupport.getCurrentSQLConnection());
     }
 }

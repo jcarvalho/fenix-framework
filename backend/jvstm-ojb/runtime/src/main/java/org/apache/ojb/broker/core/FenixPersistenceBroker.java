@@ -1,6 +1,7 @@
 package org.apache.ojb.broker.core;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,7 +24,7 @@ import org.apache.ojb.broker.query.Query;
 import org.apache.ojb.broker.query.QueryBySQL;
 import org.apache.ojb.broker.query.QueryFactory;
 
-import pt.ist.fenixframework.backend.jvstmojb.ojb.FenixJdbcAccessImpl;
+import pt.ist.fenixframework.FenixFramework;
 import pt.ist.fenixframework.backend.jvstmojb.pstm.AbstractDomainObject;
 import pt.ist.fenixframework.core.DomainObjectAllocator;
 
@@ -31,43 +32,6 @@ public class FenixPersistenceBroker extends PersistenceBrokerImpl {
 
     public FenixPersistenceBroker(PBKey key, PersistenceBrokerFactoryIF pbf) {
         super(key, pbf);
-    }
-
-    // copied and adapted from PersistenceBrokerImpl.doGetObjectByIdentity and getDBObject methods
-    @Override
-    public Object doGetObjectByIdentity(Identity oid) throws PersistenceBrokerException {
-        Class c = oid.getObjectsRealClass();
-
-        if (c == null) {
-            c = oid.getObjectsTopLevelClass();
-        }
-
-        ClassDescriptor cld = getClassDescriptor(c);
-        JdbcAccess dbAccess = serviceJdbcAccess();
-        Object newObj = dbAccess.materializeObject(cld, oid);
-
-        // if we did not find the object yet AND if the cld represents an Extent,
-        // we can lookup all tables of the extent classes:
-        if (newObj == null && cld.isExtent()) {
-            Iterator extents = getDescriptorRepository().getAllConcreteSubclassDescriptors(cld).iterator();
-
-            while (extents.hasNext()) {
-                ClassDescriptor extCld = (ClassDescriptor) extents.next();
-
-                newObj = dbAccess.materializeObject(extCld, oid);
-                if (newObj != null) {
-                    break;
-                }
-            }
-        }
-
-        if (newObj != null) {
-            if (oid.getObjectsRealClass() == null) {
-                oid.setObjectsRealClass(newObj.getClass());
-            }
-        }
-
-        return newObj;
     }
 
     // copied and adapted from PersistenceBrokerImpl's
@@ -220,7 +184,17 @@ public class FenixPersistenceBroker extends PersistenceBrokerImpl {
                 return super.getObjectFromResultSet();
             } else {
                 ResultSet rs = getRsAndStmt().m_rs;
-                return FenixJdbcAccessImpl.readObjectFromRs(rs);
+                return readObjectFromRs(rs);
+            }
+        }
+
+        private static AbstractDomainObject readObjectFromRs(ResultSet rs) {
+            try {
+                AbstractDomainObject materializedObject = FenixFramework.getConfig().getBackEnd().fromOid(rs.getLong("OID"));
+                materializedObject.readFromResultSet(rs);
+                return materializedObject;
+            } catch (SQLException e) {
+                return null;
             }
         }
     }
